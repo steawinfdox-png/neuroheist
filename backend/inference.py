@@ -51,7 +51,11 @@ normalizer = NormalizeIntensity(
     channel_wise=True
 )
 
-INFERENCE_SHAPE = (32, 64, 64)
+INFERENCE_SHAPE = tuple(
+    int(size) for size in os.getenv("INFERENCE_SHAPE", "32,64,64").split(",")
+)
+if len(INFERENCE_SHAPE) != 3 or any(size < 16 or size % 8 for size in INFERENCE_SHAPE):
+    raise ValueError("INFERENCE_SHAPE must contain three comma-separated multiples of 8, each at least 16.")
 
 # Keep inference within the memory budget of the hosted CPU service.
 inferer = SlidingWindowInferer(

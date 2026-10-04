@@ -4,6 +4,7 @@ import tempfile
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from dotenv import load_dotenv
 
@@ -14,9 +15,6 @@ from inference import INFERENCE_SHAPE, segment_brain
 import re
 import nibabel as nib
 import numpy as np
-
-from research_sources import research_topic
-
 
 app = FastAPI()
 
@@ -109,7 +107,6 @@ def create_treatment_mask(reduction_percent):
     nib.save(output_nii, output_path)
     return output_path
 
-@app.get("/")
 def root():
     return {
         "message": "NeuroHeist backend is running",
@@ -117,6 +114,11 @@ def root():
         "supported_dimensions": [3, 4],
         "input_sampling": "strided",
     }
+
+
+@app.get("/health")
+def health():
+    return root()
 
 @app.post("/upload")
 async def upload_scan(
@@ -196,6 +198,8 @@ async def simulate_treatment(data: dict):
         }
 
     try:
+        from research_sources import research_topic
+
         print("Treatment selected:", treatment)
 
         # Research the exact treatment selected by the user.
@@ -256,3 +260,10 @@ async def simulate_treatment(data: dict):
         return {
             "error": str(error)
         }
+
+
+frontend_dist = os.path.join(os.path.dirname(__file__), "..", "neuroheist", "dist")
+if os.path.isdir(frontend_dist):
+    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
+else:
+    app.add_api_route("/", root, methods=["GET"])
