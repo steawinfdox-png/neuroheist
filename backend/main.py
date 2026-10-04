@@ -5,6 +5,11 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
+from dotenv import load_dotenv
+
+# Load local settings before inference reads MODEL_URL at import time.
+load_dotenv()
+
 from inference import segment_brain
 import re
 import nibabel as nib
@@ -16,11 +21,15 @@ from research_sources import research_topic
 app = FastAPI()
 
 
+allowed_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("FRONTEND_ORIGINS", "http://localhost:5173,https://neuroheist.select,https://www.neuroheist.select").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173"
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
