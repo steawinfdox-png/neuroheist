@@ -12,7 +12,7 @@ function App() {
     <div className="app">
       {result === null ? (
         <div className="glass panel">
-          <h1>Brain scan analysis</h1>
+          <h1 className = "title">Brain scan analysis</h1>
           <p className="subtitle">
             Upload an MRI scan to detect and visualize tumor regions in 3D.
           </p>

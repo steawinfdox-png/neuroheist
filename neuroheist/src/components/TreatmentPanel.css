@@ -58,6 +58,7 @@ scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   font-size: 13px;
   line-height: 1.4;
   opacity: 0.7;
+  
 }
 
 /* Two classes so this beats the margin-top on .upload__button */

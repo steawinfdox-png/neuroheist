@@ -1,35 +1,35 @@
 import { useEffect, useState } from "react";
 import "./TreatmentPanel.css";
 
-// ---- Config: change these to match your backend ----
-const API_URL = "http://localhost:8000/simulate"; // backend treatment endpoint
+const API_URL = "https://neuroheist-backend.onrender.com/simulate";
+
 const USE_MOCK = false; // set to false once the backend endpoint is running
 
 const TREATMENTS = [
   {
     id: "3D-CRT",
     name: "3D-CRT",
-    description: "Precise, high-dose radiation delivered in 1–5 sessions.",
+    description: "Several beams shaped to match the tumor's 3D outline, given daily over several weeks.",
   },
   {
     id: "IMRT",
     name: "Intensity-modulated radiation therapy",
-    description: "Radiation shaped to the tumor, given over several weeks.",
+    description: "Varies the strength within each beam to fit the tumor closely and spare nearby tissue.",
   },
   {
     id: "Photon beams",
-    name: "Proton beams",
+    name: "Proton therapy",
     description: "Protons release most of their energy at the tumor, sparing tissue behind it.",
   },
   {
     id: "SRS",
     name: "Stereotactic radiosurgery ",
-    description: "Treats the entire brain, usually when there are multiple tumors.",
+    description: "A very precise, high dose aimed at a small tumor in 1–5 sessions. No incision despite the name.",
   },
   {
     id: "RT",
     name: "Radiotherapy",
-    description: "Standard radiation therapy for treating tumors.",
+    description: "Treats the entire brain, usually for multiple tumors, given daily over 1–3 weeks.",
   }
 ];
 

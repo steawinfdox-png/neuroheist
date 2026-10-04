@@ -82,3 +82,7 @@ body{
   align-items: center;
   justify-content: center;
 }
+.title{
+  font-size: 48px;
+  font-weight: bold;
+}
