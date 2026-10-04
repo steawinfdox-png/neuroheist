@@ -1,3 +1,4 @@
+import { apiUrl } from "../api";
 import { useRef, useState } from "react";
 
 /*
@@ -11,7 +12,7 @@ import { useRef, useState } from "react";
 */
 
 // ---- Config: change these to match your backend ----
-const API_URL = "http://localhost:8000/upload"; // backend upload endpoint
+const API_URL = apiUrl("/upload");
 const FIELD_NAME = "file"; // must match the field name the backend reads
 const ACCEPTED_EXTENSIONS = [".nii", ".nii.gz"];
 const MAX_SIZE_MB = 200;
@@ -127,7 +128,7 @@ export default function ScanUpload({ onResult }) {
         if (result.error) {
           throw new Error(result.error);
         }
-        result.maskUrl = `http://localhost:8000${result.tumor_mask}`;
+        result.maskUrl = apiUrl(result.tumor_mask);
       }
 
       setStatus("done");
