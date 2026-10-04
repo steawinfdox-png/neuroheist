@@ -126,10 +126,25 @@ export default function ScanUpload({ onResult }) {
         try {
           responseData = JSON.parse(responseText);
         } catch {
-          throw new Error(`The server returned an invalid response (status ${response.status}).`);
+          const responseMessage = responseText
+            .replace(/<[^>]*>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 180);
+          const rayId = response.headers.get("cf-ray");
+          const rayHint = rayId ? ` Cloudflare Ray ID: ${rayId}.` : "";
+          throw new Error(
+            response.ok
+              ? `The server returned an invalid response (HTTP ${response.status}).`
+              : `Upload failed (HTTP ${response.status}). ${responseMessage || "Please try again."}${rayHint}`
+          );
         }
         if (!response.ok || responseData.error) {
-          throw new Error(responseData.error || `The server rejected the upload (status ${response.status}).`);
+          throw new Error(
+            responseData.error ||
+            (typeof responseData.detail === "string" && responseData.detail) ||
+            `The server rejected the upload (HTTP ${response.status}).`
+          );
         }
         result = responseData;
         result.maskUrl = apiUrl(result.tumor_mask);
