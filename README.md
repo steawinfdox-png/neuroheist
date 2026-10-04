@@ -32,3 +32,5 @@ cloudflared tunnel --config /root/.cloudflared/neuroheist.yml run neuroheist
 The tunnel uses HTTP/2 because outbound UDP to Cloudflare is blocked on this network. Keep this machine and both processes running for the public site to remain available. Once Porkbun has the assigned Cloudflare nameservers, check `https://neuroheist.select/health` and upload the sample 3D scan through the website.
 
 On this machine, both processes are installed as `neuroheist.service` and `neuroheist-tunnel.service` under systemd. Use `systemctl status neuroheist.service neuroheist-tunnel.service` to check them, or `journalctl -u neuroheist.service -u neuroheist-tunnel.service -f` to follow their logs.
+
+The local network's DNS resolvers currently answer `NXDOMAIN` for this new domain, although public resolvers return Cloudflare. A temporary `/etc/hosts` entry on this machine points `neuroheist.select` to a Cloudflare edge IP so the local browser can use the site. Remove that entry when the network DNS resolves the domain normally; it is a local workaround, not a DNS record for visitors.
