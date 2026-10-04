@@ -121,13 +121,17 @@ export default function ScanUpload({ onResult }) {
 
         // Don't set Content-Type: the browser adds the correct multipart header
         const response = await fetch(API_URL, { method: "POST", body: formData });
-        if (!response.ok) {
-          throw new Error(`The server rejected the upload (status ${response.status}).`);
+        const responseText = await response.text();
+        let responseData;
+        try {
+          responseData = JSON.parse(responseText);
+        } catch {
+          throw new Error(`The server returned an invalid response (status ${response.status}).`);
         }
-        result = await response.json();
-        if (result.error) {
-          throw new Error(result.error);
+        if (!response.ok || responseData.error) {
+          throw new Error(responseData.error || `The server rejected the upload (status ${response.status}).`);
         }
+        result = responseData;
         result.maskUrl = apiUrl(result.tumor_mask);
       }
 
@@ -135,10 +139,10 @@ export default function ScanUpload({ onResult }) {
       onResult?.(result, file);
     } catch (err) {
       setStatus("error");
-      // fetch throws a TypeError when it can't reach the server at all (often CORS)
+      // A network failure can have several causes, including a sleeping backend.
       setError(
         err instanceof TypeError
-          ? "Couldn't reach the server. Check that the backend is running and has CORS enabled."
+          ? "Couldn't reach the server. Check that the backend is running, then try again."
           : err.message
       );
     }
@@ -160,7 +164,7 @@ export default function ScanUpload({ onResult }) {
         <p className="upload__prompt">
           {isDragging ? "Drop the scan here" : "Drag an MRI scan here, or click to choose a file"}
         </p>
-        <p className="upload__hint">Accepted: {ACCEPTED_EXTENSIONS.join(", ")} up to {MAX_SIZE_MB} MB</p>
+        <p className="upload__hint">Accepted: {ACCEPTED_EXTENSIONS.join(", ")} up to {MAX_SIZE_MB} MB. Use a 4D MRI with four channels; tumor masks are not scans.</p>
       </div>
 
       <input className = "upload__input"
