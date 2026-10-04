@@ -87,14 +87,19 @@ def segment_brain(input_path):
     )
     channels = np.empty((4, *INFERENCE_SHAPE), dtype=np.float32)
     input_channels = 1 if len(nii.shape) == 3 else 4
+    target_xyz = (INFERENCE_SHAPE[1], INFERENCE_SHAPE[2], INFERENCE_SHAPE[0])
+    spatial_slices = tuple(
+        slice(None, None, max(1, (size + target - 1) // target))
+        for size, target in zip(original_shape, target_xyz)
+    )
     for channel_index in range(input_channels):
-        source = nii.dataobj if input_channels == 1 else nii.dataobj[..., channel_index]
-        volume = np.asarray(source, dtype=np.float32)
+        slices = spatial_slices if input_channels == 1 else spatial_slices + (channel_index,)
+        volume = np.asarray(nii.dataobj[slices], dtype=np.float32)
         volume = np.transpose(volume, (2, 0, 1))[np.newaxis, ...]
         channels[channel_index] = np.asarray(
             resize(normalizer(volume))[0], dtype=np.float32
         )
-        del source, volume
+        del volume
     if input_channels == 1:
         channels[1:] = channels[0]
 

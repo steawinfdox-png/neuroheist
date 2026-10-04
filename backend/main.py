@@ -115,6 +115,7 @@ def root():
         "message": "NeuroHeist backend is running",
         "inference_shape": INFERENCE_SHAPE,
         "supported_dimensions": [3, 4],
+        "input_sampling": "strided",
     }
 
 @app.post("/upload")
