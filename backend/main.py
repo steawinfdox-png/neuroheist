@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 # Load local settings before inference reads MODEL_URL at import time.
 load_dotenv()
 
-from inference import segment_brain
+from inference import INFERENCE_SHAPE, segment_brain
 import re
 import nibabel as nib
 import numpy as np
@@ -112,7 +112,9 @@ def create_treatment_mask(reduction_percent):
 @app.get("/")
 def root():
     return {
-        "message": "NeuroHeist backend is running"
+        "message": "NeuroHeist backend is running",
+        "inference_shape": INFERENCE_SHAPE,
+        "supported_dimensions": [3, 4],
     }
 
 @app.post("/upload")
