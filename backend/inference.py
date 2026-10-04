@@ -49,9 +49,11 @@ normalizer = NormalizeIntensity(
     channel_wise=True
 )
 
-# Much smaller inference window
+INFERENCE_SHAPE = (48, 96, 96)
+
+# Keep inference within the memory budget of the hosted CPU service.
 inferer = SlidingWindowInferer(
-    roi_size=(64, 128, 128),
+    roi_size=INFERENCE_SHAPE,
     sw_batch_size=1,
     overlap=0.25
 )
@@ -60,45 +62,44 @@ inferer = SlidingWindowInferer(
 def segment_brain(input_path):
 
     nii = nib.load(input_path)
-
-    image = nii.get_fdata().astype(np.float32)
-    original_shape = image.shape[:3]
+    original_shape = nii.shape[:3]
     original_affine = nii.affine.copy()
 
-    print("Original MRI shape:", image.shape)
+    print("Original MRI shape:", nii.shape)
 
-    if image.ndim != 4:
+    if len(nii.shape) not in (3, 4):
         raise ValueError(
-            "Expected a 4D NIfTI containing 4 MRI modalities."
+            "Expected a 3D MRI or a 4D NIfTI containing 4 MRI modalities."
         )
 
-    if image.shape[-1] != 4:
+    if len(nii.shape) == 4 and nii.shape[-1] != 4:
         raise ValueError(
-            f"Expected 4 MRI channels, but received shape {image.shape}."
+            f"Expected 4 MRI channels, but received shape {nii.shape}."
         )
 
-    # [D,H,W,C] -> [C,D,H,W]
-    image = np.transpose(image, (3, 2, 0, 1))
-
-    image = normalizer(image)
-
-    # Downsample for much faster CPU inference
+    # Load and resize one modality at a time to keep memory usage low.
+    # For a 3D MRI, reuse its one modality in all four model channels.
     resize = Resize(
-        spatial_size=(64, 128, 128),
+        spatial_size=INFERENCE_SHAPE,
         mode="trilinear"
     )
+    channels = np.empty((4, *INFERENCE_SHAPE), dtype=np.float32)
+    input_channels = 1 if len(nii.shape) == 3 else 4
+    for channel_index in range(input_channels):
+        source = nii.dataobj if input_channels == 1 else nii.dataobj[..., channel_index]
+        volume = np.asarray(source, dtype=np.float32)
+        volume = np.transpose(volume, (2, 0, 1))[np.newaxis, ...]
+        channels[channel_index] = np.asarray(
+            resize(normalizer(volume))[0], dtype=np.float32
+        )
+    if input_channels == 1:
+        channels[1:] = channels[0]
 
-    image = resize(image)
-
-    tensor = torch.from_numpy(
-        np.asarray(image, dtype=np.float32)
-    )
-
-    tensor = tensor.unsqueeze(0)
+    tensor = torch.from_numpy(channels[np.newaxis, ...])
 
     print("Model input shape:", tensor.shape)
 
-    with torch.no_grad():
+    with torch.inference_mode():
 
         prediction = inferer(
             inputs=tensor,
@@ -143,7 +144,7 @@ def segment_brain(input_path):
     tumor_mask = mask_tensor[0, 0].numpy().astype(np.uint8)
     mask_nii = nib.Nifti1Image(
         tumor_mask,
-        np.eye(4)
+        original_affine
     )
 
     OUTPUT_DIR = os.path.join(

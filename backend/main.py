@@ -21,11 +21,18 @@ from research_sources import research_topic
 app = FastAPI()
 
 
-allowed_origins = [
+default_origins = {
+    "http://localhost:5173",
+    "https://neuroheist.select",
+    "https://www.neuroheist.select",
+    "https://neuroheist-blond.vercel.app",
+}
+extra_origins = {
     origin.strip().rstrip("/")
-    for origin in os.getenv("FRONTEND_ORIGINS", "http://localhost:5173,https://neuroheist.select,https://www.neuroheist.select").split(",")
+    for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
     if origin.strip()
-]
+}
+allowed_origins = sorted(default_origins | extra_origins)
 
 app.add_middleware(
     CORSMiddleware,

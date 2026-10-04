@@ -164,7 +164,7 @@ export default function ScanUpload({ onResult }) {
         <p className="upload__prompt">
           {isDragging ? "Drop the scan here" : "Drag an MRI scan here, or click to choose a file"}
         </p>
-        <p className="upload__hint">Accepted: {ACCEPTED_EXTENSIONS.join(", ")} up to {MAX_SIZE_MB} MB. Use a 4D MRI with four channels; tumor masks are not scans.</p>
+        <p className="upload__hint">Accepted: {ACCEPTED_EXTENSIONS.join(", ")} up to {MAX_SIZE_MB} MB. Use a 3D MRI or a 4D MRI with four channels; tumor masks are not scans.</p>
       </div>
 
       <input className = "upload__input"
