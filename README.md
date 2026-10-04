@@ -30,3 +30,5 @@ cloudflared tunnel --config /root/.cloudflared/neuroheist.yml run neuroheist
 ```
 
 The tunnel uses HTTP/2 because outbound UDP to Cloudflare is blocked on this network. Keep this machine and both processes running for the public site to remain available. Once Porkbun has the assigned Cloudflare nameservers, check `https://neuroheist.select/health` and upload the sample 3D scan through the website.
+
+On this machine, both processes are installed as `neuroheist.service` and `neuroheist-tunnel.service` under systemd. Use `systemctl status neuroheist.service neuroheist-tunnel.service` to check them, or `journalctl -u neuroheist.service -u neuroheist-tunnel.service -f` to follow their logs.

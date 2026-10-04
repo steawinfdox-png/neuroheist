@@ -1,0 +1,17 @@
+[Unit]
+Description=NeuroHeist local website and MRI API
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=ahaan
+Group=ahaan
+WorkingDirectory=/home/ahaan/Desktop/rowdyhacks/neuroheist
+ExecStart=/home/ahaan/Desktop/rowdyhacks/neuroheist/scripts/start_local.sh
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

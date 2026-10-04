@@ -1,0 +1,14 @@
+[Unit]
+Description=NeuroHeist Cloudflare Tunnel
+Wants=network-online.target
+Requires=neuroheist.service
+After=network-online.target neuroheist.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/cloudflared tunnel --config /root/.cloudflared/neuroheist.yml run neuroheist
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
