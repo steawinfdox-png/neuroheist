@@ -111,7 +111,7 @@ export default function TreatmentPanel({ scanResult, onResult }) {
       setStatus("error");
       setError(
         err instanceof TypeError
-          ? "Couldn't reach the server. Check that the backend is running and has CORS enabled."
+          ? "Couldn't reach the server. Check that the backend is running, then try again."
           : err.message
       );
     }
