@@ -3,6 +3,7 @@ uvicorn[standard]
 python-multipart
 numpy
 nibabel
+scipy
 torch
 monai
 scikit-image

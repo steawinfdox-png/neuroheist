@@ -3,6 +3,7 @@ import urllib.request
 import nibabel as nib
 import numpy as np
 import torch
+from scipy.ndimage import zoom
 
 from monai.inferers import SlidingWindowInferer
 from monai.transforms import NormalizeIntensity
@@ -32,6 +33,7 @@ if not os.path.exists(MODEL_PATH):
     print("Model download complete.")
 
 device = torch.device("cpu")
+torch.set_num_threads(1)
 
 model = create_model()
 
@@ -49,7 +51,7 @@ normalizer = NormalizeIntensity(
     channel_wise=True
 )
 
-INFERENCE_SHAPE = (48, 96, 96)
+INFERENCE_SHAPE = (32, 64, 64)
 
 # Keep inference within the memory budget of the hosted CPU service.
 inferer = SlidingWindowInferer(
@@ -92,6 +94,7 @@ def segment_brain(input_path):
         channels[channel_index] = np.asarray(
             resize(normalizer(volume))[0], dtype=np.float32
         )
+        del source, volume
     if input_channels == 1:
         channels[1:] = channels[0]
 
@@ -132,16 +135,14 @@ def segment_brain(input_path):
         tumor_mask,
         (1, 2, 0)
     )
-    mask_tensor = torch.from_numpy(tumor_mask).float()
-    mask_tensor = mask_tensor.unsqueeze(0).unsqueeze(0)
-
-    mask_tensor = torch.nn.functional.interpolate(
-        mask_tensor,
-        size=original_shape,
-        mode="nearest"
+    del prediction, probabilities, prediction_mask, tensor, channels
+    tumor_mask = zoom(
+        tumor_mask,
+        np.array(original_shape) / np.array(tumor_mask.shape),
+        order=0,
+        output=np.uint8,
+        prefilter=False,
     )
-
-    tumor_mask = mask_tensor[0, 0].numpy().astype(np.uint8)
     mask_nii = nib.Nifti1Image(
         tumor_mask,
         original_affine
