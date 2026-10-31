@@ -1,0 +1,24 @@
+# Local credentials; keep the documented example available.
+.env
+.env.*
+!.env.example
+
+# Python environments and caches.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Downloaded model checkpoints and generated inference data.
+backend/*.pth
+backend/*.pt
+backend/.model-download.*
+backend/outputs/
+
+# Local build and runtime files. Existing tracked files remain tracked.
+node_modules/
+dist/
+*.log
+*.pid
+.DS_Store
