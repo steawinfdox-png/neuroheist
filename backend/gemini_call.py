@@ -1,38 +1,65 @@
-"""Compatibility entry point, now using local Gemma instead of Gemini."""
+import os
+import time
+from dotenv import load_dotenv
+from google import genai
+from google.genai.errors import APIError
 
-import json
+load_dotenv()
 
-from local_llm import chat_json, model_name
-
+# Initialize the Gemini client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def ask_gemini(treatment: str, summary: str, retries: int = 3) -> str:
-    evidence = json.loads(summary).get("evidence", [])
-    if not evidence:
-        raise ValueError("The retrieved abstracts do not contain verified tumor-volume measurements for this treatment. Try a more specific treatment; no clinical effect was invented.")
-    schema = {
-        "type": "object", "properties": {
-            "evidence_index": {"type": "integer", "minimum": 0, "maximum": len(evidence) - 1},
-        }, "required": ["evidence_index"], "additionalProperties": False,
-    }
-    selected = chat_json(
-        "For an educational visualization of " + treatment + ", select ONE relevant "
-        "observed brain-tumor volume decrease from the verified evidence array below. "
-        "Return its zero-based evidence_index. Do not extrapolate, average, or predict "
-        "a patient's response. For paired_volumes, Python has already calculated the "
-        "percentage from the reported baseline and follow-up volumes.\n\n" + summary,
-        schema,
-    )
-    index = selected.get("evidence_index") if isinstance(selected, dict) else None
-    if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < len(evidence):
-        raise ValueError("Local model selected an invalid evidence observation.")
-    match = evidence[index]
-    result = {
-        "reduction": match["reduction_percent"] / 100,
-        "source_id": match["source_id"], "evidence_quote": match["quote"],
-        "evidence_type": match["evidence_type"], "model": model_name(),
-        "notice": "Educational illustration of a reported study observation; not a patient-specific treatment prediction.",
-    }
-    for key in ("baseline_volume", "followup_volume", "units", "calculation"):
-        if key in match:
-            result[key] = match[key]
-    return json.dumps(result)
+    prompt = f"""
+You are analyzing research about brain tumor treatment.
+
+Treatment:
+{treatment}
+
+Research summary:
+{summary}
+
+Estimate the expected tumor volume reduction from this treatment based ONLY
+on the research summary.
+
+Return ONLY valid JSON in exactly this format:
+
+{{"reduction": 0.43}}
+
+Rules:
+- reduction must be a decimal number between 0 and 1.
+- 0.43 means a 43% tumor volume reduction.
+- Do not include a percent sign.
+- Do not include any explanation.
+- Do not include any other fields.
+- Do not return markdown.
+- Number cannot be 0.0
+"""
+
+    for attempt in range(retries):
+        try:
+            chat = client.chats.create(
+                model="gemini-3.8-flash"
+            )
+
+            response = chat.send_message(prompt)
+
+            return response.text.strip()
+
+        except APIError as e:
+            if e.code in (503, 429) and attempt < retries - 1:
+                wait_time = (attempt + 1) * 2
+                print(
+                    f"Service busy ({e.code}). "
+                    f"Retrying in {wait_time}s..."
+                )
+                time.sleep(wait_time)
+            else:
+                print(f"Gemini API Error: {e}")
+                break
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            break
+
+    return '{"error": "Unable to generate response from Gemini API."}'

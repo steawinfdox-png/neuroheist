@@ -1,7 +1,5 @@
 import os
 import tempfile
-import json
-import math
 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from inference import INFERENCE_SHAPE, segment_brain
+import re
 import nibabel as nib
 import numpy as np
 
@@ -22,7 +21,6 @@ app = FastAPI()
 
 default_origins = {
     "http://localhost:5173",
-    "http://127.0.0.1:5173",
     "https://neuroheist.select",
     "https://www.neuroheist.select",
     "https://neuroheist-blond.vercel.app",
@@ -90,12 +88,11 @@ def create_treatment_mask(reduction_percent):
         tumor_coords[:, 2]
     ]
 
-    if reduction_percent < 100:
-        treatment_mask[
-            scaled_coords[:, 0],
-            scaled_coords[:, 1],
-            scaled_coords[:, 2]
-        ] = labels
+    treatment_mask[
+        scaled_coords[:, 0],
+        scaled_coords[:, 1],
+        scaled_coords[:, 2]
+    ] = labels
 
     output_path = os.path.join(
         os.path.dirname(__file__),
@@ -192,7 +189,7 @@ def get_tumor_mask(filename: str):
     )
 
 @app.post("/simulate")
-def simulate_treatment(data: dict):
+async def simulate_treatment(data: dict):
     treatment = data.get("treatment")
 
     if not treatment:
@@ -206,16 +203,35 @@ def simulate_treatment(data: dict):
         print("Treatment selected:", treatment)
 
         # Research the exact treatment selected by the user.
-        research = json.loads(research_topic(treatment))
-        reduction = research.get("reduction")
-        if (
-            isinstance(reduction, bool)
-            or not isinstance(reduction, (int, float))
-            or not math.isfinite(reduction)
-            or not 0 <= reduction <= 1
-        ):
-            raise ValueError("Research did not return a valid supported reduction value.")
-        reduction_percent = reduction * 100
+        gemini_answer = research_topic(treatment)
+
+        print("Gemini response:", gemini_answer)
+
+        # Extract the first number from Gemini's response.
+        match = re.search(
+            r"[-+]?(?:\d*\.\d+|\d+\.?\d*)",
+            gemini_answer
+        )
+
+        if not match:
+            raise ValueError(
+                "Gemini did not return a numerical reduction value."
+            )
+
+        reduction = float(match.group())
+
+        # Gemini may return either:
+        # 0.38  -> 38%
+        # 38    -> 38%
+        if 0 <= reduction <= 1:
+            reduction_percent = reduction * 100
+        else:
+            reduction_percent = reduction
+
+        reduction_percent = max(
+            0,
+            min(100, reduction_percent)
+        )
 
         # Create a new tumor mask with ONLY the tumor reduced.
         mask_path = create_treatment_mask(
@@ -226,14 +242,10 @@ def simulate_treatment(data: dict):
             "treatment": treatment,
             "reductionPercent": reduction_percent,
             "summary": (
-                f"Educational scenario for {treatment}, illustrating a reported "
-                f"{reduction_percent:.1f}% volume reduction from a study. "
-                "This is not a patient-specific treatment prediction."
+                f"Research-based simulation for {treatment} "
+                f"predicts approximately "
+                f"{reduction_percent:.1f}% tumor volume reduction."
             ),
-            "sources": research.get("sources", []),
-            "model": research.get("model"),
-            "retrievalProvider": research.get("retrieval_provider"),
-            "evidenceQuote": research.get("evidence_quote"),
             "maskUrl": (
                 "/tumor-mask/"
                 + os.path.basename(mask_path)
