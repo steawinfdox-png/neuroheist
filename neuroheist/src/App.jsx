@@ -1,12 +1,14 @@
+
 import { useState } from "react";
 import ScanUpload from "./components/ScanUpload";
 import ResultsView from "./components/ResultsView";
+import TreatmentComparison from "./components/TreatmentComparison";
 import "./App.css";
 
 function App() {
-  // null = no scan analyzed yet (show upload); anything else = show results
   const [result, setResult] = useState(null);
   const [file, setFile] = useState(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   return (
     <div className="app">
@@ -16,7 +18,7 @@ function App() {
           <p className="subtitle">
             Upload an MRI scan to detect and visualize tumor regions in 3D.
           </p>
-          {/* When the upload finishes, save both the backend data and the file */}
+
           <ScanUpload
             onResult={(data, uploadedFile) => {
               setResult(data);
@@ -24,13 +26,20 @@ function App() {
             }}
           />
         </div>
+      ) : showComparison ? (
+        <TreatmentComparison
+          file={file}
+          onBack={() => setShowComparison(false)}
+        />
       ) : (
         <ResultsView
           result={result}
           file={file}
+          onCompare={() => setShowComparison(true)}
           onNewScan={() => {
             setResult(null);
             setFile(null);
+            setShowComparison(false);
           }}
         />
       )}

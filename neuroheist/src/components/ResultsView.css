@@ -4,6 +4,12 @@
   margin: 0 auto;
 }
 
+.results__header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .results__header {
   display: flex;
   justify-content: space-between;

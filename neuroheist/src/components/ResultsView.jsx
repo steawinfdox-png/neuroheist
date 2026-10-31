@@ -4,7 +4,7 @@ import LayerControls from "./LayerControls";
 import TreatmentPanel from "./TreatmentPanel";
 import "./ResultsView.css";
 
-export default function ResultsView({ result, file, onNewScan }) {
+export default function ResultsView({ result, file, onNewScan, onCompare }) {
   // Holds { reductionPercent, summary, sources } after a treatment is simulated
   const [treatmentResult, setTreatmentResult] = useState(null);
 
@@ -18,10 +18,22 @@ export default function ResultsView({ result, file, onNewScan }) {
     <div className="results">
       <header className="results__header">
         <h1>Scan results</h1>
-        {/* Reuses your upload button styles */}
-        <button className="upload__button" onClick={onNewScan}>
-          New scan
-        </button>
+
+        <div className="results__header-actions">
+          <button
+            className="upload__button"
+            onClick={onCompare}
+          >
+            Compare Treatments
+          </button>
+
+          <button
+            className="upload__button"
+            onClick={onNewScan}
+          >
+            New scan
+          </button>
+        </div>
       </header>
 
       <div className="results__grid">

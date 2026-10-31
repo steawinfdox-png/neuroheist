@@ -3,6 +3,9 @@ import time
 from dotenv import load_dotenv
 from google import genai
 from google.genai.errors import APIError
+from google.genai import types
+from gemini_model import GeminiInfo
+import json
 
 load_dotenv()
 
@@ -11,40 +14,58 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def ask_gemini(treatment: str, summary: str, retries: int = 3) -> str:
     prompt = f"""
-You are analyzing research about brain tumor treatment.
+You are a neuroscience research analyst.
 
-Treatment:
-{treatment}
+For the following brain tumor reduction treatment:
 
-Research summary:
+Treatment: {treatment}
+
+Treatment summary:
 {summary}
 
-Estimate the expected tumor volume reduction from this treatment based ONLY
-on the research summary.
+Using ONLY the treatment summary and the brain information below, provide information about the treatment and estimate a tumor reduction factor.
 
-Return ONLY valid JSON in exactly this format:
+Brain information:
 
-{{"reduction": 0.43}}
+Total Brain Volume: {brain_vol}
+
+Tumor Brain Volume: {tumor_vol}
+
+Tumor/Brain Ratio: {ratio}
+
+
+Return ONLY valid JSON matching exactly this structure:
+
+{{
+    "treatment_name": "string",
+    "treatment_description": "string",
+    "tumor_factor": 0.43
+}}
 
 Rules:
-- reduction must be a decimal number between 0 and 1.
-- 0.43 means a 43% tumor volume reduction.
+- treatment_name must be the name of the treatment.
+- treatment_description must be a concise description of how the treatment works, based only on the provided treatment summary.
+- tumor_factor must be a decimal number between 0 and 1 representing the estimated tumor volume reduction.
+- For example, 0.43 means a 43% tumor volume reduction.
+- tumor_factor cannot be 0.0.
 - Do not include a percent sign.
-- Do not include any explanation.
-- Do not include any other fields.
-- Do not return markdown.
-- Number cannot be 0.0
+- Do not include any fields other than treatment_name, treatment_description, and tumor_factor.
+- Do not include explanations outside the JSON.
+- Do not return markdown or code fences.
+- Return valid JSON only.
 """
 
     for attempt in range(retries):
         try:
-            chat = client.chats.create(
-                model="gemini-3.8-flash"
+            response = client.models.generate_content(
+                model = "gemini-3.8-flash",
+                contents=prompt,
+                config = types.GenerateContentConfig(
+                    response_mime_type = "application/json",
+                    response_schema = GeminiInfo
+                )
             )
-
-            response = chat.send_message(prompt)
-
-            return response.text.strip()
+            return json.loads(response.text)
 
         except APIError as e:
             if e.code in (503, 429) and attempt < retries - 1:

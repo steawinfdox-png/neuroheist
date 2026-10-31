@@ -1,84 +1,266 @@
 
-.upload {
+/* ========================================
+   NEUROHEIST — GLOBAL DESIGN SYSTEM
+======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: 'Inter', sans-serif;
+  color: #F1F0FA;
+  background: #090B12;
+
+  --bg-main: #090B12;
+  --bg-card: rgba(20, 22, 36, 0.82);
+  --bg-card-hover: rgba(29, 31, 49, 0.95);
+
+  --accent: #9B7BFF;
+  --accent-bright: #B49AFF;
+  --accent-soft: rgba(155, 123, 255, 0.14);
+
+  --cyan: #65D9E8;
+
+  --text-primary: #F1F0FA;
+  --text-secondary: #9699AF;
+  --text-muted: #666B83;
+
+  --border: rgba(170, 164, 214, 0.13);
+  --border-active: rgba(155, 123, 255, 0.55);
+
+  --radius-card: 20px;
+  --radius-inner: 14px;
+
+  --transition: 0.25s ease;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+
+  background:
+    radial-gradient(
+      ellipse at 15% 15%,
+      rgba(91, 67, 155, 0.16),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 85% 80%,
+      rgba(35, 100, 130, 0.10),
+      transparent 40%
+    ),
+    var(--bg-main);
+
+  background-attachment: fixed;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+}
+
+/* ========================================
+   MAIN APPLICATION
+======================================== */
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ========================================
+   GLASS SURFACES
+======================================== */
+
+.glass {
+  background: linear-gradient(
+    145deg,
+    rgba(27, 29, 46, 0.88),
+    rgba(14, 16, 28, 0.92)
+  );
+
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+/* ========================================
+   UPLOAD PAGE
+======================================== */
+
+.panel {
+  width: 100%;
+  max-width: 850px;
+  margin: 40px auto;
+  padding: 48px 40px;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: 20px;
 
+  text-align: center;
+  gap: 12px;
+}
+
+.panel h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 650;
+  letter-spacing: -1.5px;
+}
+
+.subtitle {
+  max-width: 550px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ========================================
+   FILE UPLOAD
+======================================== */
+
+.upload {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 20px;
   padding: 20px;
   text-align: center;
 }
 
-.test {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+.upload__dropzone {
+  width: 100%;
+  max-width: 620px;
+  padding: 36px 24px;
+
+  border: 1px dashed rgba(155, 123, 255, 0.45);
+  border-radius: 18px;
+
+  background: rgba(155, 123, 255, 0.035);
+
+  transition: var(--transition);
 }
 
-.upload__dropzone{
-   border: 2px dashed rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  padding: 10px;
+.upload__dropzone:hover {
+  background: rgba(155, 123, 255, 0.08);
+  border-color: var(--accent);
+  box-shadow: 0 0 30px rgba(155, 123, 255, 0.08);
 }
-.upload__button{
-  background: #8b5cf6;
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  padding: 18px 24px;
-  font-size: 16px;
-  cursor: pointer;
-  box-sizing: border-box;
+
+.upload__button {
+  padding: 14px 26px;
   margin-top: 24px;
+
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+
+  background: linear-gradient(
+    135deg,
+    #9B7BFF,
+    #7552D9
+  );
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  box-shadow: 0 5px 20px rgba(120, 83, 220, 0.22);
+}
+
+.upload__button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(120, 83, 220, 0.35);
+  filter: brightness(1.1);
+}
+
+.upload__button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .upload__button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-.upload__input{
-
+.upload__input {
   text-align: center;
-
-}
-.glass {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04));
-  backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 28px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-
- 
-}
-*{
-  box-sizing: border-box
 }
 
-body{
-  font-family: 'Inter', sans-serif;
-  color: #fff;
- min-height: 100vh;
-  background:
-    radial-gradient(circle at 30% 40%, rgba(99, 102, 241, 0.45), transparent 40%),
-    radial-gradient(circle at 70% 60%, rgba(169, 85, 247, 0.81), transparent 45%),
-    #0b0b14;
+/* ========================================
+   SCROLLBARS
+======================================== */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 123, 255, 0.35) transparent;
 }
 
-.panel{
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  max-width: 1000px;
-  margin-top: 40px;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
 }
-.app{
-  align-items: center;
-  justify-content: center;
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(155, 123, 255, 0.3);
+  border-radius: 20px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 123, 255, 0.55);
+}
+
+/* ========================================
+   RESPONSIVE
+======================================== */
+
+@media (max-width: 600px) {
+  .app {
+    padding: 16px;
+  }
+
+  .panel {
+    padding: 32px 20px;
+  }
+
+  .upload__dropzone {
+    padding: 28px 16px;
+  }
 }

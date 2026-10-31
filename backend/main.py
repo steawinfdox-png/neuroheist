@@ -9,7 +9,7 @@ from inference import segment_brain
 import re
 import nibabel as nib
 import numpy as np
-
+import shutil
 from research_sources import research_topic
 
 
@@ -26,7 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def create_treatment_mask(reduction_percent):
+def create_treatment_mask(treatment, reduction_percent):
     original_path = os.path.join(
         os.path.dirname(__file__),
         "outputs",
@@ -80,10 +80,19 @@ def create_treatment_mask(reduction_percent):
         scaled_coords[:, 2]
     ] = labels
 
+    filename_match = {
+        "3D-CRT": "CRT.nii.gz",
+        "Intensity-modulated radiation therapy": "IMRT_mask.nii.gz",
+        "Proton beams": "proton_mask.nii.gz",
+        "Stereotactic radiosurgery ": "stereo_mask.nii.gz",
+        "Radiotherapy": "radio_mask.nii.gz"
+    }
+    filename_final = filename_match.get(treatment)
+
     output_path = os.path.join(
         os.path.dirname(__file__),
         "outputs",
-        "treatment_mask.nii.gz"
+        filename_final
     )
 
     output_nii = nib.Nifti1Image(
@@ -129,6 +138,31 @@ async def upload_scan(
 
         input_file.write(contents)
         input_file.close()
+        OUTPUT_DIR = os.path.join(
+            os.path.dirname(__file__),
+            "outputs"
+        )
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        # Remove treatment masks from the previous scan.
+        old_masks = [
+            "CRT.nii.gz",
+            "IMRT_mask.nii.gz",
+            "proton_mask.nii.gz",
+            "stereo_mask.nii.gz",
+            "radio_mask.nii.gz"
+        ]
+
+        for filename in old_masks:
+            old_path = os.path.join(OUTPUT_DIR, filename)
+
+        if os.path.exists(old_path):
+            os.remove(old_path)
+            
+        og_path = os.path.join(
+            OUTPUT_DIR,
+            "og_brain.nii.gz"
+        )
+        shutil.copyfile(input_path, og_path)
 
         # Run the actual AI segmentation.
         mask_path = segment_brain(input_path)
@@ -166,6 +200,38 @@ def get_tumor_mask(filename: str):
         media_type="application/gzip",
         filename=filename
     )
+@app.get("/treatment-masks")
+def get_treatment_masks():
+
+    output_dir = os.path.join(
+        os.path.dirname(__file__),
+        "outputs"
+    )
+
+    filename_match = {
+        "3D-CRT": "CRT.nii.gz",
+        "Intensity-modulated radiation therapy": "IMRT_mask.nii.gz",
+        "Proton beams": "proton_mask.nii.gz",
+        "Stereotactic radiosurgery": "stereo_mask.nii.gz",
+        "Radiotherapy": "radio_mask.nii.gz"
+    }
+
+    available_masks = []
+
+    for treatment, filename in filename_match.items():
+
+        file_path = os.path.join(output_dir, filename)
+
+        if os.path.exists(file_path):
+            available_masks.append({
+                "treatment": treatment,
+                "filename": filename,
+                "maskUrl": f"/tumor-mask/{filename}"
+            })
+
+    return {
+        "masks": available_masks
+    }
 
 @app.post("/simulate")
 async def simulate_treatment(data: dict):
@@ -184,18 +250,7 @@ async def simulate_treatment(data: dict):
 
         print("Gemini response:", gemini_answer)
 
-        # Extract the first number from Gemini's response.
-        match = re.search(
-            r"[-+]?(?:\d*\.\d+|\d+\.?\d*)",
-            gemini_answer
-        )
-
-        if not match:
-            raise ValueError(
-                "Gemini did not return a numerical reduction value."
-            )
-
-        reduction = float(match.group())
+        reduction = gemini_answer.tumor_factor
 
         # Gemini may return either:
         # 0.38  -> 38%
@@ -212,6 +267,7 @@ async def simulate_treatment(data: dict):
 
         # Create a new tumor mask with ONLY the tumor reduced.
         mask_path = create_treatment_mask(
+            treatment,
             reduction_percent
         )
 

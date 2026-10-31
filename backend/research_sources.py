@@ -2,6 +2,8 @@ from dotenv import load_dotenv
 from tavily import TavilyClient
 from summarizer import summarize
 from gemini_call import ask_gemini
+from gemini_test import ask_geminii
+from tumor_measure import measure
 import os
 
 load_dotenv()
@@ -28,7 +30,7 @@ def generate_query(treatment: str):
 
 
 def research_topic(treatment: str):
-
+    brain_vol, tumor_vol, ratio = measure()
     query = generate_query(treatment)
 
     response = tavily.search(
@@ -52,6 +54,9 @@ def research_topic(treatment: str):
 
     # ONE Groq API call
     summary = summarize(combined_content)
-    answer = ask_gemini(treatment, summary)
+    answer = ask_geminii(treatment, summary, brain_vol, tumor_vol, ratio)
 
     return answer
+
+answer = research_topic("EBRT")
+print(answer)
